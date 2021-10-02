@@ -9,7 +9,7 @@
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
     "generate": "npm run generate:server",
-    "generate:server": "cd graphql && graphql-codegen",
+    "generate:server": "cd graphql && graphql-codegen --watch ./**/*.graphql",
     "graphql": "nodemon"
   },
   "dependencies": {
