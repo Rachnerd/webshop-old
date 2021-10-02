@@ -6,12 +6,12 @@ import { List } from "@webshop/molecules";
 import styled from "styled-components";
 
 interface HomeProps {
-  itemsState: RequestState<ClientItem[]>;
+  items: RequestState<ClientItem[]>;
   addToCart: (id: number, quantity: number) => void;
 }
 
 export const HomePage: React.FunctionComponent<HomeProps> = ({
-  itemsState: { data, error, loading },
+  items: { data, error, loading },
   addToCart,
 }) =>
   loading ? (
