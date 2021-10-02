@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CartItemModel, RequestState } from "@webshop/models";
+import { CartItemModel, RemoteCartItem, RemoteItem } from "@webshop/models";
 import { normalize } from "@webshop/utils";
 import {
   getCartItemRequest,
@@ -10,80 +10,49 @@ import {
   updateCartItemRequest,
 } from "@webshop/requests";
 import { CartPage } from "@webshop/pages";
+import { useQuery } from "react-query";
 
 export default function Cart() {
-  const [totalPriceRequestCounter, setTotalPriceRequestCounter] = useState(1);
-  const [cartState, setCartState] = useState<RequestState<CartItemModel[]>>({
-    loading: true,
-  });
-  const [totalPriceState, setTotalPriceState] = useState<RequestState<string>>({
-    loading: true,
-  });
+  const [cart, setCart] = useState<CartItemModel[] | undefined>(undefined);
 
-  /**
-   * Fetch total price
-   */
-  useEffect(() => {
-    setTotalPriceState({ loading: true });
-    (async () => {
-      try {
-        const totalPrice = await getCartTotalPriceRequest();
+  const totalPriceQuery = useQuery<string>("totalPrice", async () =>
+    getCartTotalPriceRequest()
+  );
 
-        setTotalPriceState({
-          loading: false,
-          data: totalPrice,
-        });
-      } catch (error) {
-        setTotalPriceState({
-          loading: false,
-          error,
-        });
-      }
-    })();
-  }, [totalPriceRequestCounter]);
+  const cartQuery = useQuery<RemoteCartItem[]>("cart", async () =>
+    getCartRequest()
+  );
 
-  /**
-   * Fetch Cart
-   */
+  const cartItemIds = cartQuery.data?.map((cartItem) => cartItem.id);
+
+  const itemsQuery = useQuery<RemoteItem[]>(
+    ["cartItems", { cartItemIds }],
+    async () =>
+      getItemsRequest({
+        ids: cartItemIds,
+      }).then((data) => data.content),
+    {
+      enabled: false,
+    }
+  );
+
   useEffect(() => {
     (async () => {
-      try {
-        const cart = await getCartRequest();
-
-        if (cart.length === 0) {
-          setCartState({
-            loading: false,
-            data: [],
-          });
+      if (cartQuery.data && cartQuery.data.length > 0) {
+        const { data } = await itemsQuery.refetch();
+        if (data === undefined) {
           return;
         }
-
-        const itemsResponse = await getItemsRequest({
-          ids: cart.map(({ id }) => id),
-        });
-
-        const normalizedCart = normalize(cart);
-
-        const cartItems: CartItemModel[] = itemsResponse.content.map(
-          (item) => ({
-            ...item,
-            quantity: normalizedCart[item.id].quantity,
-            total: normalizedCart[item.id].total,
-          })
-        );
-
-        setCartState({
-          loading: false,
-          data: cartItems,
-        });
-      } catch (error) {
-        setCartState({
-          loading: false,
-          error,
-        });
+        const normalizedCart = normalize(cartQuery.data);
+        const cartItems: CartItemModel[] = data.map((item) => ({
+          ...item,
+          quantity: normalizedCart[item.id].quantity,
+          total: normalizedCart[item.id].total,
+        }));
+        setCart(cartItems);
       }
     })();
-  }, []);
+  }, [cartQuery.data?.length || 0]);
 
   /**
    * Remove item from cart, update local state and trigger total price request if cart is not empty.
@@ -93,17 +62,10 @@ export default function Cart() {
       try {
         await removeCartItemRequest(id);
 
-        const updatedCart = cartState.data!.filter((item) => item.id !== id);
-        setCartState((cart) => ({
-          ...cart,
-          data: updatedCart,
-        }));
+        const updatedCart = cart!.filter((item) => item.id !== id);
+        setCart(updatedCart);
 
-        if (updatedCart.length === 0) {
-          setTotalPriceState({ data: "0", loading: false });
-        } else {
-          setTotalPriceRequestCounter((counter) => counter + 1);
-        }
+        await totalPriceQuery.refetch();
       } catch (error) {
         console.error("Failed to save cart item", id);
       }
@@ -117,34 +79,31 @@ export default function Cart() {
     (async () => {
       try {
         await updateCartItemRequest({ id, quantity });
-        setCartState((cart) => ({
-          ...cart,
-          data: cart.data!.map((item) =>
-            item.id !== id
-              ? item
-              : {
+        setCart((cart) =>
+          cart!.map((item) =>
+            item.id === id
+              ? {
                   ...item,
                   quantity,
                   total: "",
                 }
-          ),
-        }));
-
-        setTotalPriceRequestCounter((counter) => counter + 1);
+              : item
+          )
+        );
 
         const cartItem = await getCartItemRequest(id);
-
-        setCartState((cart) => ({
-          ...cart,
-          data: cart.data!.map((item) =>
-            item.id !== id
-              ? item
-              : {
+        setCart((cart) =>
+          cart!.map((item) =>
+            item.id === id
+              ? {
                   ...item,
                   ...cartItem,
                 }
-          ),
-        }));
+              : item
+          )
+        );
+
+        await totalPriceQuery.refetch();
       } catch (error) {
         console.error("Failed to save cart item", id);
       }
@@ -153,8 +112,16 @@ export default function Cart() {
 
   return (
     <CartPage
-      cartState={cartState}
-      totalPriceState={totalPriceState}
+      cartState={{
+        error: cartQuery.error || itemsQuery.error,
+        data: cart,
+        loading: cartQuery.isLoading || itemsQuery.isLoading,
+      }}
+      totalPriceState={{
+        loading: totalPriceQuery.isLoading,
+        data: totalPriceQuery.data,
+        error: totalPriceQuery.error,
+      }}
       removeItem={removeItem}
       saveItem={saveItem}
     />
