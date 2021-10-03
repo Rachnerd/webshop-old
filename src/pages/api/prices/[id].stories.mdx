@@ -1,0 +1,37 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
+
+<Meta
+  title="API/Prices/Get [id]]"
+  parameters={{
+    viewport: {
+      viewports: INITIAL_VIEWPORTS,
+      defaultViewport: "desktop",
+    },
+  }}
+/>
+
+# Get price by id
+
+## Request
+
+```
+http://localhost:3000/api/prices/1
+```
+
+## Response
+
+```json
+109.95
+```
+
+## Live response
+
+<iframe width={"100%"} src="http://localhost:3000/api/prices/1" />
+
+## Source
+
+| Type      | File location                 |
+| --------- | ----------------------------- |
+| API Route | src/pages/api/prices/[id]].ts |
+| Type      | number                        |
