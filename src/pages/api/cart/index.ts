@@ -9,7 +9,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     case "GET": {
       const cart = getCart();
       const cartAsArray = Object.keys(cart).map((id) => ({
-        id,
+        id: parseInt(id),
         quantity: cart[id],
         total: numeral(PRICES[id]).multiply(cart[id]).format("0,0.00"),
       }));
@@ -20,11 +20,16 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       break;
     }
     case "POST": {
-      const { id, quantity } = req.body;
       const cart = getCart();
-      cart[id] = quantity;
-      updateCart(cart);
-      res.status(204).end();
+      const { quantity, id } = req.body;
+      if (quantity && id) {
+        cart[id] = req.body.quantity;
+        updateCart(cart);
+        res.status(204).end();
+      } else {
+        res.status(400).end();
+      }
+
       break;
     }
     default: {
