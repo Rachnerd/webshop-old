@@ -1,28 +1,17 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import numeral from "numeral";
-import { PRICES } from "@webshop/data";
-
-/**
- * Inmemory cart
- * Key value: id - quantity
- */
-interface Cart {
-  [id: string]: number;
-}
-
-export const CART: Cart = {
-  "1": 2,
-};
+import { getCart, PRICES, updateCart } from "@webshop/data";
 
 const PERFORMANCE_DELAY = 1000;
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   switch (req.method) {
     case "GET": {
-      const cartAsArray = Object.keys(CART).map((key) => ({
-        id: key,
-        quantity: CART[key],
-        total: numeral(PRICES[key]).multiply(CART[key]).format("0,0.00"),
+      const cart = getCart();
+      const cartAsArray = Object.keys(cart).map((id) => ({
+        id,
+        quantity: cart[id],
+        total: numeral(PRICES[id]).multiply(cart[id]).format("0,0.00"),
       }));
 
       // await delay(PERFORMANCE_DELAY);
@@ -32,7 +21,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     }
     case "POST": {
       const { id, quantity } = req.body;
-      CART[id] = quantity;
+      const cart = getCart();
+      cart[id] = quantity;
+      updateCart(cart);
       res.status(204).end();
       break;
     }

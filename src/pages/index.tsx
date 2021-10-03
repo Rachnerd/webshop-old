@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
-import {
-  ClientItem,
-  Paging,
-  RemoteCartItem,
-  RequestState,
-} from "@webshop/models";
+import { Paging, RemoteCartItem, RemoteItem } from "@webshop/models";
 import { HomePage } from "@webshop/pages";
-import { normalize } from "@webshop/utils";
+import { normalize, Paged } from "@webshop/utils";
+import { useQuery } from "react-query";
+import { ClientItem } from "../models/client/client-item.model";
 import {
   addItemToCartRequest,
   getCartRequest,
@@ -19,68 +16,42 @@ const PAGING: Paging = {
 };
 
 export default function Index() {
-  const [itemsState, setItemsState] = useState<RequestState<ClientItem[]>>({
-    loading: true,
-  });
+  /**
+   * Fetch remote items to display.
+   */
+  const itemsQuery = useQuery<Paged<RemoteItem>>("items", async () =>
+    getItemsRequest({ paging: PAGING })
+  );
 
   /**
-   * Get items from server
+   * Fetch remote cart information.
    */
-  useEffect(() => {
-    (async () => {
-      try {
-        const items = await getItemsRequest({
-          paging: PAGING,
-        });
-        setItemsState({ loading: false, data: items.content });
-      } catch (error) {
-        setItemsState({ loading: false, error });
-      }
-    })();
-  }, []);
-
-  const [cartState, setCartState] = useState<RequestState<RemoteCartItem[]>>({
-    loading: true,
-  });
+  const cartQuery = useQuery<RemoteCartItem[]>("cart", async () =>
+    getCartRequest()
+  );
 
   /**
-   * Get cart from server
+   * Keeping items as local states allows to modify and populate it with cart data (aggregation).
    */
-  useEffect(() => {
-    (async () => {
-      try {
-        const cart = await getCartRequest();
-        setCartState({ loading: false, data: cart });
-      } catch (error) {
-        setCartState({ loading: false, error });
-      }
-    })();
-  }, []);
+  const [items, setItems] = useState<ClientItem[] | undefined>(undefined);
 
   /**
-   * Enrich remote item to client item.
+   * Aggregation logic that populates items with `amountInCart` based on Cart data.
+   * RemoteItem -> ClientItem
    */
   useEffect(() => {
-    const items = itemsState.data;
-    const cart = cartState.data;
+    const remoteItems = itemsQuery.data?.content;
+    const cart = cartQuery.data;
 
-    if (items && cart) {
+    if (remoteItems && cart) {
       const normalizedCart = normalize(cart);
-      setItemsState((state) => ({
-        ...state,
-        data: state.data!.map((item) => ({
-          ...item,
-          ...(normalizedCart[item.id] !== undefined
-            ? {
-                amountInCart: normalizedCart[item.id].quantity,
-              }
-            : {
-                amountInCart: 0,
-              }),
-        })),
+      const clientItems = remoteItems.map((item) => ({
+        ...item,
+        amountInCart: normalizedCart[item.id]?.quantity || 0,
       }));
+      setItems(clientItems);
     }
-  }, [itemsState.data !== undefined, cartState.data !== undefined]);
+  }, [itemsQuery.data, cartQuery.data]);
 
   /**
    * Add item to cart remotely and update local state accordingly.
@@ -89,22 +60,27 @@ export default function Index() {
     (async () => {
       try {
         await addItemToCartRequest(id, quantity);
-        setItemsState((state) => ({
-          ...state,
-          data: state.data!.map((item) =>
-            item.id !== id
-              ? item
-              : {
-                  ...item,
-                  amountInCart: quantity,
-                }
-          ),
-        }));
+        const updatedItems = items?.map((item) => {
+          if (item.id === id) {
+            item.amountInCart = quantity;
+          }
+          return item;
+        });
+        setItems(updatedItems);
       } catch (error) {
         console.error("Add item to cart failed", error);
       }
     })();
   };
 
-  return <HomePage addToCart={addToCart} itemsState={itemsState} />;
+  return (
+    <HomePage
+      addToCart={addToCart}
+      items={{
+        loading: itemsQuery.isLoading,
+        error: itemsQuery.error,
+        data: items || itemsQuery.data?.content,
+      }}
+    />
+  );
 }
