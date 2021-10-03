@@ -6,6 +6,7 @@ import React from "react";
 import { Navigation } from "@webshop/organisms";
 import { NAVIGATION } from "@webshop/config";
 import { MainLayout } from "@webshop/templates";
+import { QueryClient, QueryClientProvider } from "react-query";
 import { ApolloProvider } from "@apollo/client";
 import { useApollo } from "../graphql/client/client";
 
@@ -23,14 +24,27 @@ function MyApp({
   }
   const client = useApollo(initialApolloState);
 
+  const [queryClient] = React.useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            cacheTime: 0,
+          },
+        },
+      })
+  );
+
   return (
-    <ApolloProvider client={client}>
-      <ThemeProvider theme={defaultTheme}>
-        <AppLayout currentRoute={router.asPath}>
-          <Component {...pageProps} />
-        </AppLayout>
-      </ThemeProvider>
-    </ApolloProvider>
+    <ThemeProvider theme={defaultTheme}>
+      <AppLayout currentRoute={router.asPath}>
+        <ApolloProvider client={client}>
+          <QueryClientProvider client={queryClient}>
+            <Component {...pageProps} />
+          </QueryClientProvider>
+        </ApolloProvider>
+      </AppLayout>
+    </ThemeProvider>
   );
 }
 
