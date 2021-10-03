@@ -27,6 +27,7 @@ export const parameters = {
       order: [
         "Docs",
         ["Intro", "Getting started", "Assignments overview"],
+        "API",
         "Atoms",
         "Molecules",
         "Organisms",

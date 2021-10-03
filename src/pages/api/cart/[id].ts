@@ -1,15 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import numeral from "numeral";
-import { getCart, PRICES, updateCart } from "@webshop/data";
+import { getCart, NORMALIZED_ITEMS, PRICES, updateCart } from "@webshop/data";
 
 const PERFORMANCE_DELAY = 1000;
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  const id = req.query.id as string;
+  const id = parseInt(req.query.id as string);
 
   const cart = getCart();
 
-  if (cart[id] === undefined) {
+  if (NORMALIZED_ITEMS[id] === undefined) {
     res.status(404).end();
     return;
   }
