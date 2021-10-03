@@ -1,0 +1,56 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
+
+<Meta
+  title="API/Items/Get by category"
+  parameters={{
+    viewport: {
+      viewports: INITIAL_VIEWPORTS,
+      defaultViewport: "desktop",
+    },
+  }}
+/>
+
+# Get items by category
+
+## Request
+
+```
+http://localhost:3000/api/items/category/electronics
+```
+
+## Response
+
+```json
+{
+  "content": [
+    {
+      "id": 9,
+      "title": "WD 2TB Elements Portable External Hard Drive - USB 3.0 ",
+      "price": 64,
+      "description": "USB 3.0 and USB 2.0 Compatibility Fast data transfers Improve PC Performance High Capacity; Compatibility Formatted NTFS for Windows 10, Windows 8.1, Windows 7; Reformatting may be required for other operating systems; Compatibility may vary depending on user’s hardware configuration and operating system",
+      "category": "electronics",
+      "image": "https://fakestoreapi.com/img/61IBBVJvSDL._AC_SY879_.jpg",
+      ...
+    },
+    ...
+  ],
+  "page": 0,
+  "size": 6,
+  "totalResults": 6
+}
+```
+
+## Live response
+
+<iframe
+  width={"100%"}
+  src="http://localhost:3000/api/items/category/electronics?page=0&size=6"
+/>
+
+## Source
+
+| Type      | File location                              |
+| --------- | ------------------------------------------ |
+| API Route | src/pages/api/items/category/[category].ts |
+| Type      | src/models/server/remote-item.model.ts     |
