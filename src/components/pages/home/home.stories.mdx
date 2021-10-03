@@ -30,7 +30,7 @@ export const CLIENT_ITEMS = ITEMS.map((item) => ({ ...item, amountInCart: 0 }));
     <AppLayout currentRoute={"/"}>
       <HomePage
         addToCart={noop}
-        itemsState={{ loading: false, data: CLIENT_ITEMS.slice(0, 2) }}
+        items={{ loading: false, data: CLIENT_ITEMS.slice(0, 2) }}
       />
     </AppLayout>
   </Story>
@@ -43,7 +43,7 @@ export const CLIENT_ITEMS = ITEMS.map((item) => ({ ...item, amountInCart: 0 }));
     <AppLayout currentRoute={"/"}>
       <HomePage
         addToCart={noop}
-        itemsState={{ loading: false, data: CLIENT_ITEMS }}
+        items={{ loading: false, data: CLIENT_ITEMS }}
       />
     </AppLayout>
   </Story>
@@ -56,7 +56,7 @@ export const CLIENT_ITEMS = ITEMS.map((item) => ({ ...item, amountInCart: 0 }));
     <AppLayout currentRoute={"/"}>
       <HomePage
         addToCart={noop}
-        itemsState={{
+        items={{
           loading: false,
           data: ITEMS.map((item) => ({ ...item, price: undefined })),
         }}
@@ -70,7 +70,7 @@ export const CLIENT_ITEMS = ITEMS.map((item) => ({ ...item, amountInCart: 0 }));
 <Canvas>
   <Story name="Loading" height={"480px"}>
     <AppLayout currentRoute={"/"}>
-      <HomePage addToCart={noop} itemsState={{ loading: true }} />
+      <HomePage addToCart={noop} items={{ loading: true }} />
     </AppLayout>
   </Story>
 </Canvas>
@@ -82,7 +82,7 @@ export const CLIENT_ITEMS = ITEMS.map((item) => ({ ...item, amountInCart: 0 }));
     <AppLayout currentRoute={"/"}>
       <HomePage
         addToCart={noop}
-        itemsState={{ error: new Error("Something went wrong") }}
+        items={{ error: new Error("Something went wrong") }}
       />
     </AppLayout>
   </Story>
