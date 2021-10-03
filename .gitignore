@@ -35,5 +35,7 @@ yarn-error.log*
 
 .idea
 
+storybook-static
+
 graphql/.generated
 .generated
