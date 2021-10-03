@@ -33,7 +33,10 @@ export default function Index() {
         await addItemToCartRequest(id, quantity);
         const updatedItems = items?.map((item) => {
           if (item.id === id) {
-            item.amountInCart = quantity;
+            return {
+              ...item,
+              amountInCart: quantity,
+            };
           }
           return item;
         });
