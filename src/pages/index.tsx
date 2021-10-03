@@ -47,7 +47,7 @@ export default function Index() {
   return (
     <HomePage
       addToCart={addToCart}
-      itemsState={{
+      items={{
         loading: itemsQuery.loading,
         data: items,
         error: itemsQuery.error,
