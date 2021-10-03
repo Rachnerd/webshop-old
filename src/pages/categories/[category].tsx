@@ -1,18 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { CategoryPage } from "@webshop/pages";
-import {
-  ClientItem,
-  Paging,
-  RemoteCartItem,
-  RemoteItem,
-} from "@webshop/models";
+import { ClientItem, RemoteCartItem, RemoteItem } from "@webshop/models";
 import { NextPageContext } from "next";
 import {
   addItemToCartRequest,
   getCartRequest,
   getItemsByCategoryRequest,
 } from "@webshop/requests";
-import { normalize } from "@webshop/utils";
+import { normalize, Paged } from "@webshop/utils";
 import { useQuery } from "react-query";
 
 const QUERY_PARAM_NAME = "category";
@@ -27,7 +22,7 @@ const PAGING = {
 };
 
 export default function Category({ category }: CategoryInitialProps) {
-  const itemsQuery = useQuery<Paging<RemoteItem[]>>(
+  const itemsQuery = useQuery<Paged<RemoteItem>>(
     `itemsByCategory:${category}`,
     async () => getItemsByCategoryRequest({ category, paging: PAGING })
   );
