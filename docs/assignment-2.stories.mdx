@@ -27,17 +27,13 @@ the same for a different service.
 [PricesService commit](https://github.com/Rachnerd/webshop/commit/939c9a5a2c772e6a7af2d5375668fbd67a69938e)
 
 In this assignment we'll learn what happens if due to new requirements the item price has to be retrieved from a different
-endpoint using a `Type Resolver`.
+endpoint using a `Type Resolver`. More info on Query vs Type resolvers can be found here: [Resolver chains](https://www.apollographql.com/docs/apollo-server/data/resolvers/#resolver-chains)
 
 ## Assignments
 
 ### 2.1 Item resolver
 
 - Create a `price` resolver for `Item` and call the `PricesService` with the id of the item.
-
-Hint:
-
-- [Resolver chains](https://www.apollographql.com/docs/apollo-server/data/resolvers/#resolver-chains)
 
 Open the [playground](http://localhost:4000) and execute the following query:
 
@@ -54,9 +50,8 @@ Open the [playground](http://localhost:4000) and execute the following query:
 }
 ```
 
-Observe the logs of the running NextJS server. You should see that `/api/prices/{id}` is called 6 times. We have just
-introduced the N+1 problem.
-
+- Observe the logs of the running NextJS server. You should see that `/api/prices/{id}` is called 6 times. We have just
+  introduced the N+1 problem.
 
 Solution:
 
@@ -71,7 +66,7 @@ Interesting resources:
 [DataLoader](https://github.com/graphql/dataloader) is a GraphQL tool that solves the N+1 problem. Instead of directly
 calling APIs, calling DataLoader allows you to batch requests instead of firing them individually.
 
-Here's an endpoint you can use to batch prices:
+- Take a look at the GET prices [API definition](/story/api-prices-get--page) and create a batching method `getByIds`.
 
 ```typescript
   async getByIds(ids: number[]): Promise<number[]> {
@@ -81,30 +76,20 @@ Here's an endpoint you can use to batch prices:
   }
 ```
 
-- Implement a `DataLoader<number, number>` for price inside the `PricesService` and make sure the N+1 problem is solved.
-
-Hint:
-
-- Here's an example of
-  DataLoader in TypeScript:
+- Create a dataloader inside the `PriceService` so it is instantiated each request.
 
 ```typescript
-type Input = any; // Whatever your requests needs
-type Output = any; // Whatever you expect in return
-
-const myDataLoader = new DataLoader<Input, Output>(
-  async (inputCollection: Input[]) => {
-    // batch impl
-    return [] as Output[]; // Output order should match input order
-  }
-);
-
-// Here's a call to dataloader with just an id
-myDataLoader.load(id); // batch function will receive: (ids: string[])
-
-// Here's a call to dataloader with paging
-myDataLoader.load({ page, size }); // batch function will receive: (pagings: GQLPagingParams[])
+export class PricesService {
+  private priceDataLoader = new DataLoader<number, number>(
+    async (ids: number[]) => {
+      // Return the results in the same order as the inputs (backend returns the correct order)
+    }
+  );
+  // ...
+}
 ```
+
+- Implement the dataloader so it sends 1 request for prices and make sure `getById` calls the dataloader's `load` method.
 
 - BONUS: Make DataLoader only call the batch endpoint if it has to fetch multiple prices. If only one price is needed
   call the original `getById` endpoint.
@@ -124,11 +109,9 @@ Open the [playground](http://localhost:4000) and execute the following query:
 }
 ```
 
-Observe the logs of the running NextJS server. You should see that `/api/prices` is called once.
+- Observe the logs of the running NextJS server. You should see that `/api/prices` is called once.
 
-BONUS: Query only 1 item and see if NextJS logs `/api/prices/{id}` is called once.
-
-
+- BONUS: Query only 1 item and see if NextJS logs `/api/prices/{id}` is called once.
 
 Solution:
 
