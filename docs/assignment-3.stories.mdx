@@ -22,150 +22,132 @@ git checkout codemotion-assignment-3
 
 It's time to move from the `playground` to an actual client. I've already installed and set up `Apollo Client` + code generation.
 
-[Apollo client commit](https://github.com/Rachnerd/webshop/commit/1e34518705d10bbcf6d170926fa4404ae719e4bc)
+[Apollo client commit](https://github.com/Rachnerd/webshop/compare/codemotion-assignment-2-solution...codemotion-assignment-3)
 
 If you take a look at `client.ts` there's quite some logic for [SSR support](https://www.apollographql.com/blog/building-a-next-js-app-with-apollo-client-slash-graphql/). If your client doesn't need a SSR, the function
 `createApolloClient` is the only thing you would define.
 
-From now on we will also start generating client-side runtime code as opposed to the compiletime types we've generated so far.
+From now on we will also start generating client-side runtime code as opposed to compile time types we've generated so far.
 
 When defining a query, a name should be given and potential variables should be passed to the query.
 
 ```graphql
-query Example($value: String!) {
-  example(value: $value) {
+query name($inputValue: String!) {
+  someQuery(inputValue: $inputValue) {
     content
   }
 }
 ```
 
-The code generator will create an Apollo query Hook based on the `.graphql` query file.
+For React the code generator will create an Apollo query Hook:
 
 ```typescript
-const { data, error, loading } = useExampleQuery({ variables: { value: "" } });
+// generated
+export function useNameQuery(
+  baseOptions: Apollo.QueryHookOptions<NameQuery, NameQueryVariables>
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<NameQuery, NameQueryVariables>(NameDocument, options);
+}
 ```
 
-Sometimes you need more control over the moment the query should execute. This is why the code generator also provides
-a `lazy` implementation:
+Which can be used inside a component as follows:
 
-```typescript
-const [loadExample, { called, loading, data }] = useExampleLazyQuery({
-  variables: { value: "" },
+```tsx
+const { data, error, loading } = useNameQuery({
+  variables: { inputValue: "Foo" },
 });
 
+if (loading) {
+  return <Loading />;
+}
+
+if (error) {
+  return <Error error={error} />;
+}
+// Data returned by Apollo follows the same structure as the query.
+return <Page data={data?.someQuery.content} />;
+```
+
+Sometimes you need to control the execution of a query which is possible with a `lazy` implementation:
+
+```typescript
+const [loadName, { called, loading, data }] = useNameLazyQuery({
+  variables: { inputValue: "" },
+});
+/**
+ * Each time `someDep` changes and `someCondition` is true Name query is executed.
+ */
 useEffect(() => {
   if (someCondition) {
-    loadExample();
+    loadName();
   }
 }, [someDep]);
 ```
+
+GraphQL code generator supports a lot varying from frameworks like React/Angular/Vue and languages like Java/.Net etc.
+For more code generator examples visit: https://www.graphql-code-generator.com
 
 ## Assignments
 
 ### 3.1 Home page items query
 
-- Update `graphql/queries/items.query.graphql` so it queries complete items. Make sure the query is called `Items` and
+- Update `src/graphql/queries/items.query.graphql` so it queries complete items. Make sure the query is called `items` and
   paging variables are not hard-coded.
 
-- Generate new code
+Now we're going to work on the Home page (`src/pages/index.ts`). There's some aggregation logic present that we
+don't want to break.
 
-Now we're going to work on the Home page (`src/pages/index.ts`). There's quite some aggregation logic happening which we
-don't want to break. Since the items fetched from GraphQL are still used in other effects, it should be stored in local state
-so that non-graphql data can still update the items. If you're stuck check the hints or solution.
+Note that `react-query` and `Apollo` are slightly different so you'll have to fix some compilation errors.
+Differences relevant for this assignment.
 
-- Implement `useItemsQuery` on the home page and remove `getItemsRequest` and its `effect`. Store the query data in local
-  state called `items` and make the rest compile again.
+|                   | react-query   | Apollo          |
+| ----------------- | ------------- | --------------- |
+| loading indicator | "isLoading"   | "loading"       |
+| data              | response data | query structure |
 
-Hints:
+- Update `itemsQuery` so it uses the generated Query hook `useItemsQuery` instead of react-query's `useQuery`.
 
-- A way of turning GraphQL data into local state is by using useEffect and useState:
-
-```graphql
-query Example($value: String!) {
-  example(value: $value) {
-    content
-  }
-}
-```
-
-```tsx
-/**
- * Keep state in the component
- */
-const [example, setExample] = useState<string | undefined>();
-
-/**
- * Execute GraphQL query
- */
-const { data, error, loading } = useExampleQuery({
-  variables: { value: "123" },
-});
-
-/**
- * Update 'example' local state each time the data of query changes
- */
-useEffect(() => {
-  if (data !== undefined) {
-    setExample(data.example.content); // <- data has the same structure as its query
-  }
-}, [data]); // Trigger if data updates
-
-if (loading) {-
-  return <Spinner />;
-}
-if (error) {
-  return <Error>...</Error>;
-}
-
-if (example) {
-  return <>...</>;
-}
-```
-
-- If `HomePage` doesn't compile anymore it's because the data does not fit exactly. This can be fixed as follows:
-
-```tsx
-  return (
-    <HomePage
-      addToCart={addToCart}
-      itemsState={{
-        loading: itemsQuery.loading,
-        data: items,
-        error: itemsQuery.error,
-      }}
-    />
-```
-
-- BONUS: Fetch items server-side with NextJS.
-
-Hint:
-
-- [Apollo + NextJS](https://www.apollographql.com/blog/building-a-next-js-app-with-apollo-client-slash-graphql/) search
-  for `getStaticProps` which is a NextJS function that executes server-side.
-
-Solution:
-
-- [Commit](https://github.com/Rachnerd/webshop/commit/3bf7a191b0eadd3861feb5ed34b05a8d00267057)
+- BONUS: Fetch items server-side with NextJS. [Apollo + NextJS](https://www.apollographql.com/blog/building-a-next-js-app-with-apollo-client-slash-graphql/)
+  -> search for `getStaticProps` which is a NextJS function that executes server-side.
 
 ### 3.2 Remove aggregation logic in client
 
-The previous assignment was a temporary solution. Let's fix it properly by moving aggregation logic to GraphQL.
+The frontend performs aggregation logic by combining `Items` and `Cart` resulting in `amountInCart`. It's time to move it
+to the server and solve this issue once for all clients. This assignment assumes you understand the steps taken in the
+previous assignments.
 
-Here's a list of things that have to be done to aggregate `cart` and `items` in GraphQL:
+- Add `amountInCart!` to `Item` type in the GraphQL schema. This should break the ItemsService because `amountInCart`
+  does not exist in `RemoteItem`.
 
-- Add `amountInCart!` to `Item` type in GraphQL.
-- Create a `CartService` and add it to the `ServerContext`.
-- Implement a method `getQuantity` that fetches the cart from `http://localhost:3000/api/cart`, checks if the `item` is
-  in the `cart` and returns the `quantity` or `0`.
-- Avoid the N+1 problem with DataLoader (prevent 6 item quantities calling 6 carts).
+Now we reached the point where a datasource does not always meet the schema requirements.
 
-Here's the Cart call with type:
+- Decouple `ItemsService` from `GQLPagedItems` by using `Paged<Required<RemoteItem>>` instead.
+
+The service should compile again, but it breaks the resolver. As described before this project chose for mandatory fields,
+so the resolver types are very strict. We can set some default values for the missing fields to please TypeScript.
+
+- Set defaults for `amountInCart` inside the resolver.
 
 ```typescript
-  async getCart(): Promise<RemoteCartItem[]> {
-    return fetch(`http://localhost:3000/api/cart`).then((res) => res.json());
-  }
+items: async (_, { paging }, { itemsService }) => {
+  const items = await itemsService.get(paging);
+  return {
+    ...items,
+    content: items.content.map((item) => ({
+      ...item,
+      amountInCart: -1, // Fallback value because fields are mandatory
+    })),
+  };
+};
 ```
+
+Now that the items are working again it's time to add a Cart datasource and hook it up to the Item type.
+
+- Create a `CartService` and add it to the `ServerContext` (don't forget to update the `ServerContext` interface).
+- Implement a method `getQuantity` that fetches the cart from [API definition](/story/api-cart-get--page), checks if the
+  `item` is in the `cart` and returns its `quantity` or `0`.
+- Avoid the N+1 problem with DataLoader (prevent 6 item quantities calling 6 carts).
 
 Open the [playground](http://localhost:4000) and execute the following query:
 
@@ -180,10 +162,24 @@ Open the [playground](http://localhost:4000) and execute the following query:
 
 Only 1 item should have more than 0 in cart (unless you have changed the cart client-side).
 
-Now that the server is set up, we can remove some code in the client.
+Now that the server is set up, we can remove the aggregation code in the client.
 
-- Add `amountInCart` to the `items.query.graphql` -> Generate code.
-- In `Home` remove cart state, cart request and the `effect` that combines `cart` and `items`.
+- Add `amountInCart` to the `items.query.graphql`.
+- In the `Home` page remove `cartQuery` and the `effect` that aggregates `Items` and `Cart`. This will partially break the `addToCart`
+  functionality. Adding an item to the cart will succeed, but the UI will not update.
+- Fix `addToCart` by temporarily populating local state `items` with data from GraphQL.
+
+```typescript
+useEffect(() => {
+  if (itemsQuery.data) {
+    setItems(itemsQuery.data.items.content);
+  }
+}, [itemsQuery.data]);
+```
+
+The homepage is working now but the App is kinda broken. Apollo aggressively caches all data by default so changes
+made in the Cart page will not be reflected on the home page (unless the home page loads for the first time). The cache
+can be turned off by changing a query's `fetch-policy` or by updating the cache locally (assignment 4).
 
 Hints:
 
@@ -191,4 +187,4 @@ Hints:
 
 Solution:
 
-- [Commit](https://github.com/Rachnerd/webshop/commit/8fdf5605bc91a9f801f60c04b21fea6fccf1944d)
+- [Commit](https://github.com/Rachnerd/webshop/compare/codemotion-assignment-3...codemotion-assignment-3-solution)

@@ -20,9 +20,9 @@ git checkout codemotion-assignment-4
 
 ## Intro
 
-No additional changes are made since the last [commit](https://github.com/Rachnerd/webshop/commit/8fdf5605bc91a9f801f60c04b21fea6fccf1944d) of the previous assignment
-
-So far we've only requests data, so let's start sending data.
+So far we've only requests data, so let's start sending data. The `Home` page still calls the REST backend when adding
+an item to the cart. In this assignment the post request will be replaced with a GraphQL `Mutation`. We'll also learn
+how to locally update Apollo's cache after a successful mutation.
 
 ## Assignments
 
@@ -31,7 +31,7 @@ So far we've only requests data, so let's start sending data.
 - Create a `mutation` called `addToCart` which returns a non-nullable boolean.
 - Create an `input` called `AddToCartParams` that contains a non-nullable id and quantity.
 
-Hint:
+Resources:
 
 - [Mutations](https://graphql.org/learn/queries/#mutations)
 
@@ -48,8 +48,8 @@ return fetch(`http://localhost:3000/api/cart`, {
 ```
 
 - Implement the `addToCart` mutation resolver.
-- Create `src/graphql/mutation/add-to-cart.mutation.graphql` and generate the mutation.
-- In `Home` replace `addItemToCartRequest` with `addToCartMutation`.
+- Create `src/graphql/mutation/add-to-cart.mutation.graphql` and create an `addToCart` mutation.
+- In `Home` replace `addItemToCartRequest` with generated `addToCartMutation`.
 
 Solution:
 
@@ -62,9 +62,27 @@ mutation.
 
 - Remove the local state update after a successful add to cart.
 - Implement the `update` method inside the `mutation` options by writing a fragment update to the cache.
+
+```typescript
+update: (cache) =>
+  cache.writeFragment({
+    id: `Item:${id}`, // <-- Apollo stores data as Type:Id
+    fragment: gql`
+      fragment UpdatedItem on Item {
+        amountInCart
+      }
+    `, // This fragment targets amountInCart
+    data: {
+      amountInCart: quantity,
+    },
+  });
+```
+
 - Cleanup by removing the local items state and fully rely on `useItemsQuery`.
 
-Hints:
+- Test if the Home page works as expected (cache is still inconsistent with the Cart page).
+
+Resources:
 
 - [Update cache after mutation](https://www.apollographql.com/docs/react/data/mutations/#updating-the-cache-after-a-mutation)
 - [writeFragment](https://www.apollographql.com/docs/react/caching/cache-interaction/#writefragment) (example states `client`
@@ -72,4 +90,4 @@ Hints:
 
 Solution:
 
-- [Commit](https://github.com/Rachnerd/webshop/commit/e2006897f1ec87ca7aec39d72f3f1c88c4ccfa06)
+- [Commit](https://github.com/Rachnerd/webshop/compare/codemotion-assignment-4...codemotion-assignment-4-solution)
