@@ -26,43 +26,162 @@ configuration and a server context containing the first API we'll call.
 Study [this commit](https://github.com/Rachnerd/webshop/commit/00ea27b994c80e162a73656185744f309f074737) to see what
 the setup of a minimal GraphQL server looks like.
 
+Things to note:
+
+- An Apollo server "context" is the request context that is created each request (multiple queries can be present in a
+  single request).
+- Data services represent data sources and are instantiated each request context to prevent state between requests.
+
+```typescript
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: (): ServerContext => ({
+    itemsService: new ItemsService(), // <--
+  }),
+});
+```
+
+- The created context is available to all resolvers as the third parameter.
+
+```typescript
+const resolvers: GQLResolvers<ServerContext> = {
+  Query: {
+    /**
+     * @param _ Object resolved so far (not relevant for Query resolvers since it's the first layer)
+     * @param __ Query input variables (hello has none)
+     * @param context ServerContext provides data sources and other deps we define (see server creation)
+     * @return string | Promise<string>
+     */
+    hello: (_, __, context) => "world",
+  },
+};
+```
+
+- If `npm run generate` is running, each change to the schema (graphql/schema.graphql) definition will result in new
+  TypeScript definitions for Schema types and Resolver types.
+
+Currently `graphql/.generated/index.ts` contains a TypeScript representation of the `hello` query definition and resolver implementation.
+
+```typescript
+// ...
+
+export type GQLQuery = {
+  __typename?: "Query";
+  hello: Scalars["String"];
+};
+
+// ...
+
+export type GQLQueryResolvers<
+  ContextType = any,
+  ParentType extends GQLResolversParentTypes["Query"] = GQLResolversParentTypes["Query"]
+> = {
+  hello?: Resolver<GQLResolversTypes["String"], ParentType, ContextType>;
+};
+
+// ...
+```
+
 ## Assignments
 
 ### 1.1 First Query
 
-- In `graphql/schema.graphql` create a type called `Item` that represents the following data model, all fields should be mandatory (non-nullable).
+#### Types
 
-```typescript
-export interface RemoteItem {
-  id: number;
-  title: string;
-  description: string;
-  image: string;
-  price: number;
-  category: string;
+- Open the [playground](http://localhost:4000) and execute the `hello` query.
+
+```graphql
+{
+  hello
 }
 ```
 
-Hint:
+- In `graphql/schema.graphql` create a type called `Item`.
+
+```graphql
+type Item {
+  id: Int!
+  title: String!
+  # ...
+}
+```
+
+A `!` makes a field non-nullable. GraphQL requests fail if a `null` is returned for a mandatory field.
+
+```graphql
+type Item {
+  id: Int! # <--
+}
+```
+
+Collections can have two `!`s. One states the collection can't be null and the other states the values inside can't be null.
+
+```graphql
+type Example {
+  items: [Item!]! # <--
+}
+```
+
+This simple project guarantees the data is always complete so it's safe to make all fields non-nullable. This is great
+because the schema can properly represent functionally optional fields (fields that are meant to be optional).
+
+In practice a lot of companies choose to make all fields optional because they can't guarantee data completeness. That
+setup loses the ability to have functionally optional fields since all fields are optional.
+
+- Hit save and check the output of the code generator `graphql/.generated/index.ts` it should contain the following
+  TS type:
+
+```typescript
+export type GQLItem = {
+  __typename?: "Item";
+  id: Scalars["Int"];
+  title: Scalars["String"];
+};
+```
+
+These TS types make sure the server and clients become strongly coupled at compile time. This means that a client's CI
+can detect breaking changes in the schema definition (which preferably should not happen).
+
+- Finish the `Item` type based on the [API definition](/story/api-items-get--page) (ignore paging for now).
+
+- Replace `any` in the ItemsService with the newly generated GQLItem[].
+
+```typescript
+export class ItemsService {
+  async get(): Promise<any> { // <--
+```
+
+Resources:
 
 - [GraphQL types and fields](https://graphql.org/learn/schema/#object-types-and-fields)
+
+#### Queries
 
 A type on itself does not allow the client to query it.
 
 - Create a `Query` called `items` that returns a collection of `Item`. The returned collection should be non-nullable and
   should only contain non-nullable values.
 
-Now that the schema is set up, run `npm run generate` to update the available TS interfaces and Server types.
-
-- Replace `any` in the ItemsService with the newly generated `GQLItem[]`.
+```graphql
+type Query {
+  hello: String!
+  # ... <--
+}
+```
 
 - Add an `items` Query resolver and call `itemsService` which is available via the server context.
 
-Hint:
+```typescript
+const resolvers: GQLResolvers<ServerContext> = {
+  Query: {
+    hello: (_, __, context) => "world",
+    // items: (_, __, context) => ...
+  },
+};
+```
 
-- [Apollo write query resolvers](https://www.apollographql.com/docs/tutorial/resolvers/)
-
-Open the [playground](http://localhost:4000) and test the following query:
+- Open the [playground](http://localhost:4000) and test the following query:
 
 ```graphql
 {
@@ -79,6 +198,10 @@ Open the [playground](http://localhost:4000) and test the following query:
 
 You should see a list of 20 items.
 
+Resources:
+
+- [Apollo write query resolvers](https://www.apollographql.com/docs/tutorial/resolvers/)
+
 Solution:
 
 - [Commit](https://github.com/Rachnerd/webshop/commit/e525c17aba9491ae0719741b7277bf57564c7422)
@@ -86,24 +209,6 @@ Solution:
 ### 1.2 Paging support
 
 A query that fetches all items from the server is very inefficient. We need to allow clients to limit the amount of results.
-
-The type we are looking for looks something like this:
-
-```typescript
-export interface Paged<T> {
-  content: T[];
-  page: number;
-  size: number;
-  totalResults: number;
-}
-```
-
-- Create a `type` called `PagedItems` that contains non-nullable paging fields and a `content` field with a non-nullable
-  `Item` collection.
-
-- Update the return `type` of the `items` query to non-nullable `PagedItems`.
-
-- Generate new TypeScript files and observe the errors in the GraphQL server.
 
 `/api/items` has paging support which can be easily enabled by removing the last `.then` block in the `ItemsService`.
 
@@ -114,9 +219,14 @@ return fetch(`http://localhost:3000/api/items`)
 // .then((data) => data.content) <-- delete
 ```
 
+- Create a `type` called `PagedItems` that contains non-nullable paging fields and a `content` field with a non-nullable
+  `Item` collection.
+
+- Update the return `type` of the `items` query to non-nullable `PagedItems`.
+
 - Fix the return type of the `get` method by replacing `GQLItem[]` with `GQLPagedItems`. Everything should compile again.
 
-Open the [playground](http://localhost:4000) and test the following query:
+- Open the [playground](http://localhost:4000) and test the following query:
 
 ```graphql
 {
@@ -137,23 +247,27 @@ Now all that's left is allowing the client to pass paging information.
 
 - Create an `input` called `PagingParams` containing a non-nullable page and size.
 
-- Update the `items` query with a `input` called `paging` of non-nullable type `PagingParams`.
-
-- Generate new TypeScript files and observe that this time there should be no errors.
-
-`/api/items` supports query parameters as follows:
-
-```typescript
-return fetch(`http://localhost:3000/api/items?page=${page}&size=${size}`)
-  .then((res) => res.json())
-  .then((data: Paged<Required<RemoteItem>>) => data);
+```graphql
+input PagingParams {
+  # ...
+}
 ```
 
-- Add paging support to the `ItemsService` using the appropriate generated `GQL` types.
+- Update `items` query with an `input` called `paging` of non-nullable type `PagingParams`.
+
+```graphql
+type Query {
+  example(param: Int!): Int!
+}
+```
+
+Now that the schema has changed the `ItemService` needs to be updated.
+
+- Update get request url with query params matching [API definition](/story/api-items-get--page).
 
 - Pass the `paging` input of the `items` query resolver to the `ItemsService`.
 
-Hint:
+Resources:
 
 - [GraphQL input types](https://graphql.org/learn/schema/#input-types)
 - [Apollo write query resolvers](https://www.apollographql.com/docs/tutorial/resolvers/)

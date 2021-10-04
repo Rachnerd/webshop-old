@@ -1,26 +1,15 @@
 import { Meta } from "@storybook/addon-docs/blocks";
-import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
 
-<Meta
-  title="Docs/Intro"
-  parameters={{
-    viewport: {
-      viewports: INITIAL_VIEWPORTS,
-      defaultViewport: "desktop",
-    },
-  }}
-/>
+<Meta title="Docs/Intro" />
 
 # Webshop
 
 ## Resources
 
 ### Architecture
-
 - [Atomic design](https://bradfrost.com/blog/post/atomic-web-design/)
 
 ### Storybook
-
 - [Docs](https://storybook.js.org/docs/react/get-started/introduction)
 - [Intro to Storybook](https://storybook.js.org/tutorials/intro-to-storybook/)
 - [Design System for Developers](https://storybook.js.org/tutorials/design-systems-for-developers/)
@@ -30,6 +19,7 @@ import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
 
 - [React](https://reactjs.org/)
 - [React Hooks](https://reactjs.org/docs/hooks-intro.html)
+- [React Query](https://react-query.tanstack.com/)
 
 ### Nextjs
 
@@ -52,51 +42,37 @@ UI components live in `src/components/**` and can be viewed independently in all
 
 ### NextJS
 
-The app is served by NextJS, which is a framework that makes server-side rendering and routing easier. NextJS creates
-pages based on directory structure and file names found in `src/pages`.
+The app is served by NextJS, which is a framework that makes server-side rendering and routing easier.
 
-- `src/pages/index` -> 'http://localhost:3000/'
-- `src/pages/cart` -> 'http://localhost:3000/cart'
-- `src/pages/categories/[category]` -> 'http://localhost:3000/category/electronics'
-- Etc..
+#### Client
 
-During this workshop `pages` will be migrated to GraphQL.
+NextJS creates pages based on directory structure and file names found in `src/pages`.
+
+| File                                  | Url                                            |
+| ------------------------------------- | ---------------------------------------------- |
+| `src/pages/index.tsx`                 | `http://localhost:3000/`                       |
+| `src/pages/cart.tsx`                  | `http://localhost:3000/cart`                   |
+| `src/pages/categories/[category].tsx` | `http://localhost:3000/categories/electronics` |
+| ...                                   | ...                                            |
+
+During this workshop the `Home` page (src/pages/index.tsx) will be migrated.
+
+#### Server
+
+NextJS creates api routes based on directory structure as well and can be found in `src/pages/api`. These api routes
+serve as a backend for this workshop to keep the stack as simple as possible. Usually the backend is a completely different
+system.
+
+| File                           | Url                                  |
+| ------------------------------ | ------------------------------------ |
+| `src/pages/api/items/index.ts` | `http://localhost:3000/api/items`    |
+| `src/pages/api/cart/index.ts`  | `http://localhost:3000/api/cart`     |
+| `src/pages/api/prices/[id]`    | `http://localhost:3000/api/prices/1` |
+| ...                            | ...                                  |
+
+All endpoints are documented in Storybook under API.
 
 ### State-management
 
-This application is built without any state-management tools like Redux etc. State-management is done with `fetch`
-(web http impl) and React hooks. This logic will be gradually replaced with GraphQL.
-
-#### React hooks
-
-[Hooks](https://reactjs.org/docs/hooks-intro.html) provide a way to keep state and perform side-effects in Function components
-that are called on each render-cycle.
-
-##### Local state
-
-```tsx
-const [data, setData] = useState([]);
-```
-
-##### Side-effects
-
-Perform a call and update local state once:
-
-```tsx
-useEffect(() => {
-  fetch(ENDPOINT)
-    .then(res => res.json())
-    .then(data => setData(data);
-}, []) // <- Empty array only executes once.
-```
-
-Perform some logic each time data is updated:
-
-```tsx
-useEffect(() => {
-  if (data) {
-    // Do something with data
-  }
-}, [data]); // <- Effect triggers once and each time `data` changes.
-```
-
+This application is built without any state-management tools like Redux etc. State-management is done locally.
+This logic will be gradually replaced with GraphQL + Apollo.
