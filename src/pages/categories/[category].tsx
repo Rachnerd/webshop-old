@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { CategoryPage } from "@webshop/pages";
-import { ClientItem, RemoteCartItem, RequestState } from "@webshop/models";
+import { ClientItem, RemoteCartItem, RemoteItem } from "@webshop/models";
 import { NextPageContext } from "next";
 import {
   addItemToCartRequest,
   getCartRequest,
   getItemsByCategoryRequest,
 } from "@webshop/requests";
-import { normalize } from "@webshop/utils";
+import { normalize, Paged } from "@webshop/utils";
+import { useQuery } from "react-query";
 
 const QUERY_PARAM_NAME = "category";
 
@@ -21,88 +22,42 @@ const PAGING = {
 };
 
 export default function Category({ category }: CategoryInitialProps) {
-  const [itemsState, setItemsState] = useState<RequestState<ClientItem[]>>({
-    loading: true,
-  });
+  const itemsQuery = useQuery<Paged<RemoteItem>>(
+    `itemsByCategory:${category}`,
+    async () => getItemsByCategoryRequest({ category, paging: PAGING })
+  );
 
-  const [cartState, setCartState] = useState<RequestState<RemoteCartItem[]>>({
-    loading: true,
-  });
+  const [items, setItems] = useState<ClientItem[] | undefined>(undefined);
 
-  /**
-   * Get items from server
-   */
+  const cartQuery = useQuery<RemoteCartItem[]>("cart", async () =>
+    getCartRequest()
+  );
+
   useEffect(() => {
-    (async () => {
-      try {
-        const items = await getItemsByCategoryRequest({
-          category,
-          paging: PAGING,
-        });
-        setItemsState({ loading: false, data: items.content });
-      } catch (error) {
-        setItemsState({ loading: false, error });
-      }
-    })();
-  }, []);
+    const remoteItems = itemsQuery.data?.content;
+    const cart = cartQuery.data;
 
-  /**
-   * Get cart from server
-   */
-  useEffect(() => {
-    (async () => {
-      try {
-        const cart = await getCartRequest();
-        setCartState({ loading: false, data: cart });
-      } catch (error) {
-        setCartState({ loading: false, error });
-      }
-    })();
-  }, []);
-
-  /**
-   * Enrich remote item to client item.
-   */
-  useEffect(() => {
-    const items = itemsState.data;
-    const cart = cartState.data;
-
-    if (items && cart) {
+    if (remoteItems && cart) {
       const normalizedCart = normalize(cart);
-      setItemsState((state) => ({
-        ...state,
-        data: state.data!.map((item) => ({
-          ...item,
-          ...(normalizedCart[item.id] !== undefined
-            ? {
-                amountInCart: normalizedCart[item.id].quantity,
-              }
-            : {
-                amountInCart: 0,
-              }),
-        })),
+      const clientItems = remoteItems.map((item) => ({
+        ...item,
+        amountInCart: normalizedCart[item.id]?.quantity || 0,
       }));
+      setItems(clientItems);
     }
-  }, [itemsState.data !== undefined, cartState.data !== undefined]);
+  }, [itemsQuery.data !== undefined, cartQuery.data !== undefined]);
 
-  /**
-   * Add item to cart remotely and update local state accordingly.
-   */
   const addToCart = (id: number, quantity: number) => {
     (async () => {
       try {
         await addItemToCartRequest(id, quantity);
-        setItemsState((state) => ({
-          ...state,
-          data: state.data!.map((item) =>
-            item.id !== id
-              ? item
-              : {
-                  ...item,
-                  amountInCart: quantity,
-                }
-          ),
-        }));
+        const updatedItems = items?.map((item) => {
+          if (item.id === id) {
+            item.amountInCart = quantity;
+          }
+          return item;
+        });
+        setItems(updatedItems);
       } catch (error) {
         console.error("Add item to cart failed", error);
       }
@@ -112,7 +67,11 @@ export default function Category({ category }: CategoryInitialProps) {
   return (
     <CategoryPage
       category={{ title: category }}
-      itemsState={itemsState}
+      itemsState={{
+        loading: itemsQuery.isLoading,
+        data: items || itemsQuery.data?.content,
+        error: itemsQuery.error,
+      }}
       addToCart={addToCart}
     />
   );
