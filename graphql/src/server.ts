@@ -21,7 +21,16 @@ const resolvers: GQLResolvers<ServerContext> = {
      * @return string | Promise<string>
      */
     hello: (_, __, context) => "world",
-    items: (_, { paging }, { itemsService }) => itemsService.get(paging),
+    items: async (_, { paging }, { itemsService }) => {
+      const items = await itemsService.get(paging);
+      return {
+        ...items,
+        content: items.content.map((item) => ({
+          ...item,
+          amountInCart: -1, // Fallback value because fields are mandatory
+        })),
+      };
+    },
   },
   Mutation: {
     addToCart: async (_, { params }, { cartService }) =>
