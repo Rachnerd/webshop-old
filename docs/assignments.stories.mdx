@@ -1,0 +1,102 @@
+import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
+
+# Assignments overview
+
+<Meta
+  title="Docs/Assignments overview"
+  parameters={{
+    viewport: {
+      viewports: INITIAL_VIEWPORTS,
+      defaultViewport: "desktop",
+    },
+  }}
+/>
+
+## Intro
+
+The owners of this webshop want to incrementally migrate towards GraphQL. This workshop looks into how this process works
+and what perks and issues you'll encounter.
+
+## Goal
+
+The goal of today is to learn GraphQL. NodeJS and React are just implementation details, so the concepts you'll learn and
+issues you'll encounter are framework independent. If you have issues related to React / NodeJS, feel free to be "inspired"
+by the solution provided in each assignment because it would be a shame to waste time.
+
+## Process
+
+You can choose to checkout assignment 1 and try to make it to the end with your own code, but it is also possible to
+checkout the solution and proceed to the next assignment.
+
+During the workshop I will present a topic and reserve time for attendees to work on the corresponding assignments. If
+you rather blaze through the assignments yourself, be my guest. It's also fine if you rather spend the time asking questions
+and just follow along when we review the solutions. It's all up to you.
+
+## Assignments overview
+
+This is just an overview. The actual assignments can be found on their own page in Storybook.
+
+### GraphQL basics (server-side)
+
+- 1.1 Setup GraphQL, implement a query.
+- 1.2 Add paging to the query
+
+Concepts:
+
+- GraphQL type
+- GraphQL input
+- GraphQL query type
+- GraphQL query resolver
+- GraphQL code generation
+
+### GraphQL optimizations (server-side)
+
+- 2.1 Resolve a specific field via another API.
+- 2.2 Solve the N+1 problem
+
+Concepts:
+
+- GraphQL item resolver
+- DataLoader
+
+### GraphQL fetch data (client-side / full stack)
+
+- 3.1 Query home page items via GraphQL
+- 3.2 Move aggregation logic to server
+
+Concepts:
+
+- Apollo client
+- GraphQL query
+- GraphQL code generation
+- Move complexity from N clients to 1 server
+
+### GraphQL mutations (full stack)
+
+- 4.1 Implement a mutation server-side and use it client-side
+- 4.2 Update stale cache after successful mutation
+
+Concepts:
+
+- GraphQL mutation
+- Apollo refetch queries
+- Apollo local cache update
+
+### GraphQL performance (client-side)
+
+- 5.1 Fix a performance issue caused by a slow backend service
+
+Concepts:
+
+- Frontend query splitting
+
+### Optional: More of the same (full stack)
+
+- 6.x The application has more pages that need to be migrated.
+
+Concepts:
+
+- Queries
+- Mutations
+- Local cache updates
+- Incremental migrating to GraphQL

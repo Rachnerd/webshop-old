@@ -14,3 +14,65 @@ import { Meta } from "@storybook/addon-docs/blocks";
 - [Intro to Storybook](https://storybook.js.org/tutorials/intro-to-storybook/)
 - [Design System for Developers](https://storybook.js.org/tutorials/design-systems-for-developers/)
 - [Addon-docs](https://storybook.js.org/docs/react/writing-docs/introduction)
+
+### React
+
+- [React](https://reactjs.org/)
+- [React Hooks](https://reactjs.org/docs/hooks-intro.html)
+- [React Query](https://react-query.tanstack.com/)
+
+### Nextjs
+
+- [NextJS](https://nextjs.org/)
+
+### GraphQL
+
+- [GraphQL](https://graphql.org/)
+- [Principled GraphQL](https://principledgraphql.com/)
+- [Apollo](https://www.apollographql.com/)
+
+## Application
+
+### UI
+
+The current application's UI is written in Storybook according to [Atomic design](https://bradfrost.com/blog/post/atomic-web-design/).
+All UI components are decoupled from state-management which means that during this workshop no html/css changes are necessary.
+
+UI components live in `src/components/**` and can be viewed independently in all their states in Storybook (left column).
+
+### NextJS
+
+The app is served by NextJS, which is a framework that makes server-side rendering and routing easier.
+
+#### Client
+
+NextJS creates pages based on directory structure and file names found in `src/pages`.
+
+| File                                  | Url                                            |
+| ------------------------------------- | ---------------------------------------------- |
+| `src/pages/index.tsx`                 | `http://localhost:3000/`                       |
+| `src/pages/cart.tsx`                  | `http://localhost:3000/cart`                   |
+| `src/pages/categories/[category].tsx` | `http://localhost:3000/categories/electronics` |
+| ...                                   | ...                                            |
+
+During this workshop the `Home` page (src/pages/index.tsx) will be migrated.
+
+#### Server
+
+NextJS creates api routes based on directory structure as well and can be found in `src/pages/api`. These api routes
+serve as a backend for this workshop to keep the stack as simple as possible. Usually the backend is a completely different
+system.
+
+| File                           | Url                                  |
+| ------------------------------ | ------------------------------------ |
+| `src/pages/api/items/index.ts` | `http://localhost:3000/api/items`    |
+| `src/pages/api/cart/index.ts`  | `http://localhost:3000/api/cart`     |
+| `src/pages/api/prices/[id]`    | `http://localhost:3000/api/prices/1` |
+| ...                            | ...                                  |
+
+All endpoints are documented in Storybook under API.
+
+### State-management
+
+This application is built without any state-management tools like Redux etc. State-management is done locally.
+This logic will be gradually replaced with GraphQL + Apollo.

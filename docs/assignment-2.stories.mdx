@@ -1,0 +1,122 @@
+import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
+
+# Assignment 2
+
+<Meta
+  title="Docs/Assignment 2"
+  parameters={{
+    viewport: {
+      viewports: INITIAL_VIEWPORTS,
+      defaultViewport: "desktop",
+    },
+  }}
+/>
+
+Starting point (if you don't want to continue on your own branch):
+
+```
+git checkout codemotion-assignment-2
+```
+
+## Intro
+
+To spare you the tedious work of creating a new TS service that interacts with a new API, I've provided the code. Observe
+the changes to see how you can add new dependencies to the `ServerContext`. In a later assignment you're expected to do
+the same for a different service.
+
+[PricesService commit](https://github.com/Rachnerd/webshop/commit/939c9a5a2c772e6a7af2d5375668fbd67a69938e)
+
+In this assignment we'll learn what happens if due to new requirements the item price has to be retrieved from a different
+endpoint using a `Type Resolver`. More info on Query vs Type resolvers can be found here: [Resolver chains](https://www.apollographql.com/docs/apollo-server/data/resolvers/#resolver-chains)
+
+## Assignments
+
+### 2.1 Item resolver
+
+- Create a `price` resolver for `Item` and call the `PricesService` with the id of the item.
+
+Open the [playground](http://localhost:4000) and execute the following query:
+
+```graphql
+{
+  items(paging: { page: 0, size: 6 }) {
+    page
+    size
+    totalResults
+    content {
+      id
+    }
+  }
+}
+```
+
+- Observe the logs of the running NextJS server. You should see that `/api/prices/{id}` is called 6 times. We have just
+  introduced the N+1 problem.
+
+Solution:
+
+- [Commit](https://github.com/Rachnerd/webshop/commit/1519eca11ad4fc8c4e07ca0f3c53f1e10061f17e)
+
+Interesting resources:
+
+- [N+1 problem](https://medium.com/the-marcy-lab-school/what-is-the-n-1-problem-in-graphql-dd4921cb3c1a)
+
+### 2.2 Solving the N+1 problem
+
+[DataLoader](https://github.com/graphql/dataloader) is a GraphQL tool that solves the N+1 problem. Instead of directly
+calling APIs, calling DataLoader allows you to batch requests instead of firing them individually.
+
+- Take a look at the GET prices [API definition](/story/api-prices-get--page) and create a batching method `getByIds`.
+
+```typescript
+  async getByIds(ids: number[]): Promise<number[]> {
+    return fetch(`http://localhost:3000/api/prices?ids=${ids.join(",")}`).then((res) =>
+      res.json()
+    );
+  }
+```
+
+- Create a dataloader inside the `PriceService` so it is instantiated each request.
+
+```typescript
+export class PricesService {
+  private priceDataLoader = new DataLoader<number, number>(
+    async (ids: number[]) => {
+      // Return the results in the same order as the inputs (backend returns the correct order)
+    }
+  );
+  // ...
+}
+```
+
+- Implement the dataloader so it sends 1 request for prices and make sure `getById` calls the dataloader's `load` method.
+
+- BONUS: Make DataLoader only call the batch endpoint if it has to fetch multiple prices. If only one price is needed
+  call the original `getById` endpoint.
+
+Open the [playground](http://localhost:4000) and execute the following query:
+
+```graphql
+{
+  items(paging: { page: 0, size: 6 }) {
+    page
+    size
+    totalResults
+    content {
+      id
+    }
+  }
+}
+```
+
+- Observe the logs of the running NextJS server. You should see that `/api/prices` is called once.
+
+- BONUS: Query only 1 item and see if NextJS logs `/api/prices/{id}` is called once.
+
+Solution:
+
+- [Commit](https://github.com/Rachnerd/webshop/commit/bd7257b74c0885650f75b38149cccb5ac06e7106)
+
+Interesting resources:
+
+- [N+1 problem](https://medium.com/the-marcy-lab-school/what-is-the-n-1-problem-in-graphql-dd4921cb3c1a)

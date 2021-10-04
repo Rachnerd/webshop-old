@@ -1,0 +1,48 @@
+import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
+
+# Assignment 5
+
+<Meta
+  title="Docs/Assignment 5"
+  parameters={{
+    viewport: {
+      viewports: INITIAL_VIEWPORTS,
+      defaultViewport: "desktop",
+    },
+  }}
+/>
+
+Starting point (if you don't want to continue on your own branch):
+
+```
+git checkout codemotion-assignment-5
+```
+
+## Intro
+
+No additional changes are made since the last [commit](https://github.com/Rachnerd/webshop/commit/e2006897f1ec87ca7aec39d72f3f1c88c4ccfa06) of the previous assignment
+
+So far we've seen the good times of GraphQL, but what if a backend service turns out to perform badly?
+
+In this assignment we're going to solve a performance issue client-side.
+
+## Assignments
+
+### 5.1
+
+- Add a price delay in `src/pages/api/prices/index.ts` by uncommenting `await delay(PERFORMANCE_DELAY);`
+
+The performance of the `price` field is blocking the user experience. The client should optimize for this.
+
+- Split `items.query.graphql` into `slow-items.query.graphql` containing `id` + `price` and `fast-items.query.graphql`
+  containing the rest.
+- Call both queries on the `HomePage`, make sure that UI is rendered as soon as FastItems is in and merge SlowItems with
+  FastItems afterwards.
+
+Hints:
+
+- Previous assignments
+
+Solution:
+
+- [Commit](https://github.com/Rachnerd/webshop/commit/9b5be3f6275508db3baa1273cd8bdb49a020b177)

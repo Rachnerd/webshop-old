@@ -1,0 +1,93 @@
+import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
+
+# Assignment 4
+
+<Meta
+  title="Docs/Assignment 4"
+  parameters={{
+    viewport: {
+      viewports: INITIAL_VIEWPORTS,
+      defaultViewport: "desktop",
+    },
+  }}
+/>
+
+Starting point (if you don't want to continue on your own branch):
+
+```
+git checkout codemotion-assignment-4
+```
+
+## Intro
+
+So far we've only requests data, so let's start sending data. The `Home` page still calls the REST backend when adding
+an item to the cart. In this assignment the post request will be replaced with a GraphQL `Mutation`. We'll also learn
+how to locally update Apollo's cache after a successful mutation.
+
+## Assignments
+
+### 4.1 Add to cart mutation
+
+- Create a `mutation` called `addToCart` which returns a non-nullable boolean.
+- Create an `input` called `AddToCartParams` that contains a non-nullable id and quantity.
+
+Resources:
+
+- [Mutations](https://graphql.org/learn/queries/#mutations)
+
+Here's the post to cart request for the `CartService`.
+
+```typescript
+return fetch(`http://localhost:3000/api/cart`, {
+  method: "POST",
+  body: JSON.stringify({ id, quantity }),
+  headers: {
+    "Content-Type": "application/json",
+  },
+}).then(() => true);
+```
+
+- Implement the `addToCart` mutation resolver.
+- Create `src/graphql/mutation/add-to-cart.mutation.graphql` and create an `addToCart` mutation.
+- In `Home` replace `addItemToCartRequest` with generated `addToCartMutation`.
+
+Solution:
+
+- [Commit](https://github.com/Rachnerd/webshop/commit/9ff3713375a4c706aeed63a4bc708d73552ee4b6)
+
+### 4.2 Updating local cache
+
+We almost got rid of all aggregation logic on the Home page. The only thing left to do is to update the cache after a successful
+mutation.
+
+- Remove the local state update after a successful add to cart.
+- Implement the `update` method inside the `mutation` options by writing a fragment update to the cache.
+
+```typescript
+update: (cache) =>
+  cache.writeFragment({
+    id: `Item:${id}`, // <-- Apollo stores data as Type:Id
+    fragment: gql`
+      fragment UpdatedItem on Item {
+        amountInCart
+      }
+    `, // This fragment targets amountInCart
+    data: {
+      amountInCart: quantity,
+    },
+  });
+```
+
+- Cleanup by removing the local items state and fully rely on `useItemsQuery`.
+
+- Test if the Home page works as expected (cache is still inconsistent with the Cart page).
+
+Resources:
+
+- [Update cache after mutation](https://www.apollographql.com/docs/react/data/mutations/#updating-the-cache-after-a-mutation)
+- [writeFragment](https://www.apollographql.com/docs/react/caching/cache-interaction/#writefragment) (example states `client`
+  but it can also be performed on cache).
+
+Solution:
+
+- [Commit](https://github.com/Rachnerd/webshop/compare/codemotion-assignment-4...codemotion-assignment-4-solution)
