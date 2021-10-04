@@ -1,0 +1,50 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
+
+<Meta
+  title="API/Cart/Get [id]"
+  parameters={{
+    viewport: {
+      viewports: INITIAL_VIEWPORTS,
+      defaultViewport: "desktop",
+    },
+  }}
+/>
+
+# Get cart item by id
+
+## Request
+
+```
+http://localhost:3000/api/cart/1
+```
+
+## Response
+
+```json
+{
+  "id": 1,
+  "quantity": 2,
+  "total": "219.90"
+}
+```
+
+## Live response
+
+<iframe width={"100%"} src="http://localhost:3000/api/cart/1" />
+
+### PUT payload
+
+```json
+{
+  "id": 1,
+  "quantity": 1
+}
+```
+
+## Source
+
+| Type      | File location                               |
+| --------- | ------------------------------------------- |
+| API Route | src/pages/api/cart/[id].ts                  |
+| Type      | src/models/server/remote-cart-item.model.ts |

@@ -1,0 +1,37 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
+
+<Meta
+  title="API/Cart/Get total price"
+  parameters={{
+    viewport: {
+      viewports: INITIAL_VIEWPORTS,
+      defaultViewport: "desktop",
+    },
+  }}
+/>
+
+# Get cart total price
+
+## Request
+
+```
+http://localhost:3000/api/cart/total-price
+```
+
+## Response
+
+```json
+"392.90"
+```
+
+## Live response
+
+<iframe width={"100%"} src="http://localhost:3000/api/cart/total-price" />
+
+## Source
+
+| Type      | File location                     |
+| --------- | --------------------------------- |
+| API Route | src/pages/api/cart/total-price.ts |
+| Type      | string                            |

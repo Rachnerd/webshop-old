@@ -31,16 +31,16 @@ export default function Index() {
     (async () => {
       try {
         await addItemToCartRequest(id, quantity);
-        setItems((items) =>
-          items.map((item) =>
-            item.id !== id
-              ? item
-              : {
-                  ...item,
-                  amountInCart: quantity,
-                }
-          )
-        );
+        const updatedItems = items?.map((item) => {
+          if (item.id === id) {
+            return {
+              ...item,
+              amountInCart: quantity,
+            };
+          }
+          return item;
+        });
+        setItems(updatedItems);
       } catch (error) {
         console.error("Add item to cart failed", error);
       }
@@ -50,7 +50,7 @@ export default function Index() {
   return (
     <HomePage
       addToCart={addToCart}
-      itemsState={{
+      items={{
         loading: itemsQuery.loading,
         data: items,
         error: itemsQuery.error,
