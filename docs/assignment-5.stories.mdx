@@ -24,17 +24,18 @@ No additional changes are made since the last [commit](https://github.com/Rachne
 
 So far we've seen the good times of GraphQL, but what if a backend service turns out to perform badly?
 
-In this assignment we're going to solve a performance issue client-side. First we'll have to introduce the issue by adding
-a delay in `src/pages/api/prices/index.ts` by uncommenting `await delay(PERFORMANCE_DELAY);`.
+In this assignment we're going to solve a performance issue client-side.
 
 ## Assignments
 
 ### 5.1
 
+- Add a price delay in `src/pages/api/prices/index.ts` by uncommenting `await delay(PERFORMANCE_DELAY);`
+
 The performance of the `price` field is blocking the user experience. The client should optimize for this.
 
 - Split `items.query.graphql` into `slow-items.query.graphql` containing `id` + `price` and `fast-items.query.graphql`
-  containing the rest -> Generate.
+  containing the rest.
 - Call both queries on the `HomePage`, make sure that UI is rendered as soon as FastItems is in and merge SlowItems with
   FastItems afterwards.
 
