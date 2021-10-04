@@ -31,5 +31,5 @@ input AddToCartParams {
 }
 
 type Mutation {
-    addToCart(params: AddToCartParams): Boolean!
+    addToCart(params: AddToCartParams!): Boolean!
 }
