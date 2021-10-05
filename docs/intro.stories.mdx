@@ -1,6 +1,14 @@
 import { Meta } from "@storybook/addon-docs/blocks";
+import { INITIAL_VIEWPORTS } from "@storybook/addon-viewport";
 
-<Meta title="Docs/Intro" />
+<Meta title="Docs/Intro"
+  parameters={{
+      viewport: {
+          viewports: INITIAL_VIEWPORTS,
+          defaultViewport: "desktop",
+      },
+  }}
+/>
 
 # Webshop
 
